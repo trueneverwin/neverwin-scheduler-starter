@@ -1,0 +1,8 @@
+# Mengabaikan file sistem macOS
+.DS_Store
+
+# Jika Anda juga ingin mengabaikan folder atau file lain, tambahkan di bawahnya
+# Contoh:
+# .env
+# node_modules/
+# *.log

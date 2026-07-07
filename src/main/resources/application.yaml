@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: neverwin-scheduler-starter
+
+neverwin:
+  scheduler:
+    schema-name: "master_data"
+    default-lock-at-most-for: "PT10M"
+    tasks:
+      scheduled1:
+        enabled: true
+        cron: "0 */5 * * * ?"
+        lock-at-most-for: "PT4M"
+        lock-at-least-for: "PT1M"
+      taskFixedRate:
+        enabled: false
+        initial-delay: 1000
+        fixed-rate: 10000
+        lock-at-most-for: "PT8S"
+        lock-at-least-for: "PT2S"
+      taskFixedDelay:
+        enabled: true
+        initial-delay: 1000
+        fixed-delay: 30000
+        lock-at-most-for: "PT20S"
+        lock-at-least-for: "PT5S"
