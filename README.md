@@ -134,3 +134,25 @@ public class SchedulerService {
     }
 }
 ```
+
+## 🔍 Observability & Logging (Correlation ID)
+
+Modul **Neverwin-Scheduler-Starter** secara otomatis men- *generate* **Correlation ID** dan **Task Name** ke dalam MDC (*Mapped Diagnostic Context*) SLF4J setiap kali sebuah *scheduler* dieksekusi.
+Fitur ini sangat krusial untuk keperluan *tracing* log jika aplikasi Anda berjalan di lingkungan *microservices* (menggunakan Kibana, Datadog, Grafana, dll), sehingga Anda bisa memfilter log berdasarkan satu siklus eksekusi *task* saja.
+
+Agar nilai dari MDC ini muncul di *console* aplikasi, Anda perlu menambahkan format pola (*pattern*) logging. Tambahkan konfigurasi ini di file `application.yml` pada **tingkat paling atas (root level)**, sejajar dengan blok `spring:` atau `neverwin:`.
+
+```yaml
+logging:
+  pattern:
+    # Memanggil nilai MDC menggunakan parameter %X{taskName} dan %X{correlationId}
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%15.15t] %-5level [%X{taskName}] [%X{correlationId}] %logger{36} - %msg%n"
+```
+
+Contoh Hasil log nya
+
+```log
+2026-07-21 21:54:50.123 [ nvw-vt-sched-1] INFO  [taskFixedRate] [8f9b2c7d4a124c6e91f0b3d8a4b5c6d7] c.n.s.ReportSchedulerService - Eksekusi task dimulai...
+2026-07-21 21:54:50.550 [ nvw-vt-sched-1] INFO  [taskFixedRate] [8f9b2c7d4a124c6e91f0b3d8a4b5c6d7] c.n.s.ReportSchedulerService - Mengumpulkan data laporan bulanan...
+2026-07-21 21:54:52.000 [ nvw-vt-sched-1] INFO  [taskFixedRate] [8f9b2c7d4a124c6e91f0b3d8a4b5c6d7] c.n.s.ReportSchedulerService - Task selesai dieksekusi.
+```

@@ -9,6 +9,7 @@ import net.javacrumbs.shedlock.core.LockingTaskExecutor;
 import org.jspecify.annotations.NonNull;
 import org.neverwin.neverwin_scheduler_starter.annotation.NeverwinScheduler;
 import org.neverwin.neverwin_scheduler_starter.properties.SchedulerProperties;
+import org.slf4j.MDC;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 @Configuration
 @RequiredArgsConstructor
@@ -67,11 +69,18 @@ public class CustomSchedulerConfig implements SchedulingConfigurer {
                     Duration lockAtLeastFor = schedulerTask.getLockAtLeastFor();
 
                     Runnable task = () -> {
+                        String correlationId = UUID.randomUUID().toString().replace("-", "");
+                        MDC.put("correlationId", correlationId);
+                        MDC.put("taskName", taskKey);
+
                         try {
                             method.setAccessible(true);
                             method.invoke(bean);
                         } catch (Exception e) {
                             throw new RuntimeException("Gagal menjalankan scheduled task: " + taskKey, e);
+                        } finally {
+                            MDC.remove("correlationId");
+                            MDC.remove("taskName");
                         }
                     };
 
@@ -89,14 +98,14 @@ public class CustomSchedulerConfig implements SchedulingConfigurer {
                         taskRegistrar.addCronTask(lockedTask, cron);
                     } else if (fixedRate != null) {
                         if (schedulerTask.getInitialDelay() != null) {
-                            FixedRateTask frTask = new FixedRateTask(lockedTask, Duration.ofMillis(fixedRate), Duration.ofMillis(schedulerTask.getFixedDelay()));
+                            FixedRateTask frTask = new FixedRateTask(lockedTask, Duration.ofMillis(fixedRate), Duration.ofMillis(schedulerTask.getInitialDelay()));
                             taskRegistrar.addFixedRateTask(frTask);
                         } else {
                             taskRegistrar.addFixedRateTask(lockedTask, Duration.ofMillis(fixedRate));
                         }
                     } else {
                         if (schedulerTask.getInitialDelay() != null) {
-                            FixedDelayTask fdTask = new FixedDelayTask(lockedTask, Duration.ofMillis(fixedDelay), Duration.ofMillis(schedulerTask.getFixedDelay()));
+                            FixedDelayTask fdTask = new FixedDelayTask(lockedTask, Duration.ofMillis(fixedDelay), Duration.ofMillis(schedulerTask.getInitialDelay()));
                             taskRegistrar.addFixedDelayTask(fdTask);
                         } else {
                             taskRegistrar.addFixedDelayTask(lockedTask, Duration.ofMillis(fixedDelay));
